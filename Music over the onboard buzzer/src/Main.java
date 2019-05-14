@@ -1,5 +1,6 @@
 import javafx.application.Application;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
@@ -8,6 +9,8 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import io.dorukayhan.composer.BadNoteException;
 import io.dorukayhan.composer.Composer;
@@ -45,7 +48,7 @@ public class Main extends Application {
 		directScore.setPrefColumnCount(20);
 		scorePath = new TextField();
 		scorePath.setPrefColumnCount(20);
-		bpm = new TextField("120");
+		bpm = new TextField("200");
 		bpm.setPrefColumnCount(5);
 		tuning = new TextField("440");
 		
@@ -53,6 +56,12 @@ public class Main extends Application {
 	
 	@Override
 	public void start(Stage stage) {
+		// Labels
+		Text directScoreBlurb = new Text("Type some score here: "),
+			 scorePathBlurb   = new Text("Or give the path of a score file: "),
+			 bpmBlurb		  = new Text("Quarter beats per minute: "),
+			 tuningBlurb	  = new Text("Frequency of middle A: ");
+		
 		// Buttons
 		Button playFromTextbox = new Button("Play!");
 		Button playFromFile = new Button("Play from file");
@@ -128,7 +137,22 @@ public class Main extends Application {
 		});
 		
 		GridPane screen = new GridPane();
+		screen.add(directScoreBlurb, 0, 0);
+		screen.add(directScore, 1, 0);
+		screen.add(scorePathBlurb, 0, 1);
+		screen.add(scorePath, 1, 1);
+		screen.add(bpmBlurb, 0, 2);
+		screen.add(bpm, 1, 2);
+		screen.add(tuningBlurb, 0, 3);
+		screen.add(tuning, 1, 3);
+		screen.add(playFromFile, 0, 4);
+		screen.add(playFromTextbox, 1, 4);
+		screen.add(quit, 2, 4);
+		StackPane root = new StackPane(screen);
 		
+		stage.setTitle("Java Composer on a Finch");
+		stage.setScene(new Scene(root));
+		stage.show();
 		
 	}
 	
@@ -164,8 +188,10 @@ public class Main extends Application {
 	}
 
 	void play(int[][] song) {
-		for(int[] note : song)
+		for(int[] note : song) {
 			finch.buzzBlocking(note[0], note[1]);
+			finch.sleep(10);
+		}
 	}
 	
 	void reinitComposer() {
