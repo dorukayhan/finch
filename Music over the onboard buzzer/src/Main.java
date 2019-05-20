@@ -4,6 +4,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Optional;
 
 import edu.cmu.ri.createlab.terk.robot.finch.Finch;
 
@@ -46,6 +48,7 @@ public class Main extends Application {
 		directScore = new TextArea(Composer.NOKIA_TUNE);
 		directScore.setPrefRowCount(5);
 		directScore.setPrefColumnCount(20);
+		directScore.setWrapText(true);
 		scorePath = new TextField();
 		scorePath.setPrefColumnCount(20);
 		bpm = new TextField("200");
@@ -71,7 +74,7 @@ public class Main extends Application {
 		// Button actions
 		playFromTextbox.setOnAction(event -> {
 			System.out.println("playFromTextbox fired: "+event.toString());
-			if(nowPlaying != null && !nowPlaying.isAlive())
+			if(nowPlaying != null && nowPlaying.isAlive())
 				nowPlaying.stop();
 			reinitComposer();
 			finch.sleep(100);
@@ -81,7 +84,7 @@ public class Main extends Application {
 				try {
 					play(composer.compileScore(directScore.getText()));
 				}catch(BadNoteException e) {
-					fInTheConsole(e, "Invalid note", "There's an invalid note in the score!");
+					fInTheConsole(e, "There's an invalid note in the score!");
 				}catch(ThreadDeath murder) {
 					/*
 					 * Thread.stop() apparently works by making the thread in concern
@@ -103,7 +106,7 @@ public class Main extends Application {
 		
 		playFromFile.setOnAction(event -> {
 			System.out.println("playFromFile fired: "+event.toString());
-			if(nowPlaying != null && !nowPlaying.isAlive())
+			if(nowPlaying != null && nowPlaying.isAlive())
 				nowPlaying.stop();
 			reinitComposer();
 			finch.sleep(100);
@@ -114,17 +117,18 @@ public class Main extends Application {
 					// Concatenate all lines into one massive line. Yes, yes, that's no identity, now shut the heap your up
 					play(composer.compileScore(file.lines().reduce("", (one, two)->one+" "+two)));
 				}catch(FileNotFoundException e) {
-					fInTheConsole(e, "File not found", scorePath.getText() + " doesn't exist or is otherwise inaccessible. Maybe try giving a full path?");
+					fInTheConsole(e, scorePath.getText() + " doesn't exist or is otherwise inaccessible. Maybe try giving a full path?");
 				}catch(IOException e) {
-					fInTheConsole(e, "Something happened to I/O", "Something happened to I/O");
+					fInTheConsole(e, "Something happened to I/O");
 				}catch(BadNoteException e) {
-					fInTheConsole(e, "Invalid note", "There's an invalid note in the score!");
+					fInTheConsole(e, "There's an invalid note in the score!");
 				}catch(ThreadDeath murder) {
 					System.out.println("File playback aborted!");
 					throw murder;
 				}
 				System.out.println("Finished playing from file");
 			});
+			nowPlaying.start();
 		});
 		
 		quit.setOnAction(event -> {
@@ -156,35 +160,9 @@ public class Main extends Application {
 		
 	}
 	
-	void fInTheConsole(Throwable t, String title, String message) {
+	void fInTheConsole(Throwable t, String message) {
 		t.printStackTrace();
-		Alert dialog = new Alert(AlertType.ERROR);
-		dialog.setTitle(title);
-		dialog.setHeaderText(message);
-		dialog.getDialogPane().setExpandableContent(stackTraceTextbox(t));
-		dialog.showAndWait();
-	}
-	
-	Node stackTraceTextbox(Throwable t) {
-		// Blurb before textbox
-		Label header = new Label("Here's the stack barf^H^H^H^Htrace, you might be able to do something with it:");
-		
-		// Textbox
-		StringWriter hmpf = new StringWriter();
-		t.printStackTrace(new PrintWriter(hmpf));
-		TextArea okbuddyjava = new TextArea(hmpf.toString());
-		okbuddyjava.setEditable(false);
-		okbuddyjava.setWrapText(true);
-		okbuddyjava.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-		GridPane.setVgrow(okbuddyjava, Priority.ALWAYS);
-		GridPane.setHgrow(okbuddyjava, Priority.ALWAYS);
-		
-		// Glue it all together
-		GridPane theThing = new GridPane();
-		theThing.setMaxWidth(Double.MAX_VALUE);
-		theThing.add(header, 0, 0);
-		theThing.add(okbuddyjava, 0, 1);
-		return theThing;
+		directScore.setText(message + "\n" + directScore.getText());
 	}
 
 	void play(int[][] song) {
